@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.deeplearning4j</groupId>
         <artifactId>deeplearning4j-examples-parent</artifactId>
-        <version>0.8-SNAPSHOT</version>
+        <version>0.9.1</version>
     </parent>
     <groupId>org.deeplearning4j.examples</groupId>
     <artifactId>lstm-hdfs</artifactId>
@@ -13,8 +13,8 @@
     <url>http://maven.apache.org</url>
 
     <properties>
-        <dl4j.version>0.8.0</dl4j.version>
-        <dl4j.spark.version>0.8.0_spark_2</dl4j.spark.version>
+        <dl4j.version>0.9.1</dl4j.version>
+        <dl4j.spark.version>0.9.1_spark_2</dl4j.spark.version>
     </properties>
 
     <build>
@@ -40,14 +40,16 @@
             <plugin>
               <groupId>net.alchim31.maven</groupId>
               <artifactId>scala-maven-plugin</artifactId>
-              <executions>
-                <execution>
-                  <goals>
-                    <goal>compile</goal>
-                    <goal>testCompile</goal>
-                  </goals>
-                </execution>
-              </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -60,7 +62,7 @@
             </dependency>
             <dependency>
                 <groupId>org.nd4j</groupId>
-                <artifactId>nd4j-native</artifactId>
+                <artifactId>nd4j-native-platform</artifactId>
                 <version>${nd4j.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -71,7 +73,7 @@
             </dependency>
             <dependency>
                 <groupId>org.nd4j</groupId>
-                <artifactId>nd4j-cuda-8.0</artifactId>
+                <artifactId>nd4j-cuda-8.0-platform</artifactId>
                 <version>${nd4j.version}</version>
                 <scope>test</scope>
             </dependency>

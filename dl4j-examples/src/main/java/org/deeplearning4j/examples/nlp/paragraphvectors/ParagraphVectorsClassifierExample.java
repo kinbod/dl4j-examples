@@ -1,7 +1,7 @@
 package org.deeplearning4j.examples.nlp.paragraphvectors;
 
 import org.datavec.api.util.ClassPathResource;
-import org.deeplearning4j.berkeley.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.deeplearning4j.examples.nlp.paragraphvectors.tools.LabelSeeker;
 import org.deeplearning4j.examples.nlp.paragraphvectors.tools.MeansBuilder;
 import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
@@ -124,7 +124,7 @@ public class ParagraphVectorsClassifierExample {
           So, labels on these two documents are used like titles,
           just to visualize our classification done properly
          */
-         log.info("Document '" + document.getLabel() + "' falls into the following categories: ");
+         log.info("Document '" + document.getLabels() + "' falls into the following categories: ");
          for (Pair<String, Double> score: scores) {
              log.info("        " + score.getFirst() + ": " + score.getSecond());
          }

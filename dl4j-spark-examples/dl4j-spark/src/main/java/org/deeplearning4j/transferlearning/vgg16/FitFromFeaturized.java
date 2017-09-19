@@ -3,7 +3,6 @@ package org.deeplearning4j.transferlearning.vgg16;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.SparkConf;
@@ -27,8 +26,6 @@ import org.deeplearning4j.nn.transferlearning.TransferLearningHelper;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.spark.api.TrainingMaster;
 import org.deeplearning4j.spark.impl.graph.SparkComputationGraph;
-import org.deeplearning4j.spark.impl.multilayer.evaluation.IEvaluateFlatMapFunction;
-import org.deeplearning4j.spark.impl.multilayer.evaluation.IEvaluationReduceFunction;
 import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster;
 import org.deeplearning4j.transferlearning.vgg16.dataHelpers.FeaturizedPreSave;
 import org.deeplearning4j.transferlearning.vgg16.dataHelpers.FlowerDataSetIteratorFeaturized;
@@ -36,6 +33,7 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.slf4j.Logger;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -54,13 +52,13 @@ import java.io.OutputStream;
  * Since the helper avoids the forward pass through the frozen layers we save on computation time when running multiple epochs.
  * In this manner, users can iterate quickly tweaking learning rates, weight initialization etc` to settle on a model that gives good results.
  */
-@Slf4j
 public class FitFromFeaturized {
 
     public static final String featureExtractionLayer = FeaturizedPreSave.featurizeExtractionLayer;
     protected static final long seed = 12345;
     protected static final int numClasses = 5;
     protected static final int nEpochs = 3;
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(FitFromFeaturized.class);
     @Parameter(names = "-useSparkLocal", description = "Use spark local (helper for testing/running without spark submit)", arity = 1)
     private boolean useSparkLocal = true;
 
@@ -173,26 +171,24 @@ public class FitFromFeaturized {
             log.info("Epoch #" + epoch + " complete");
         }
 
-        JavaRDD<DataSet> data = sc.binaryFiles(testDir + "/*").map(new Function<Tuple2<String, PortableDataStream>, DataSet>() {
-            @Override
-            public DataSet call(Tuple2<String, PortableDataStream> v1) throws Exception {
-                DataSet d = new DataSet();
-                d.load(v1._2().open());
-                return d;
-            }
-        });
+        JavaRDD<DataSet> data = sc.binaryFiles(testDir + "/*").map(new LoadDataFunction());
 
 
-        IEvaluateFlatMapFunction<Evaluation> evalFn = new IEvaluateFlatMapFunction<>(sc.broadcast(vgg16.getConfiguration().toJson()),
-            sc.broadcast(sparkComputationGraph.getNetwork().params()), batchSizePerWorker, new Evaluation(numClasses));
-        JavaRDD<Evaluation> evaluations = data.mapPartitions(evalFn);
-        evaluations.reduce(new IEvaluationReduceFunction<>());
-        Evaluation eval = sparkComputationGraph.getNetwork().evaluate(testIter);
+        Evaluation eval = sparkComputationGraph.evaluate(data);
         log.info("Eval stats BEFORE fit.....");
         log.info(eval.stats()+"\n");
         testIter.reset();
 
 
         log.info("Model build complete");
+    }
+
+    private static class LoadDataFunction implements Function<Tuple2<String, PortableDataStream>, DataSet> {
+        @Override
+        public DataSet call(Tuple2<String, PortableDataStream> v1) throws Exception {
+            DataSet d = new DataSet();
+            d.load(v1._2().open());
+            return d;
+        }
     }
 }

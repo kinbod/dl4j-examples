@@ -73,7 +73,7 @@ public class Word2VecSentimentRNN {
 
         //Set up network configuration
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-            .updater(Updater.ADAM).adamMeanDecay(0.9).adamVarDecay(0.999)
+            .updater(Updater.ADAM)
             .regularization(true).l2(1e-5)
             .weightInit(WeightInit.XAVIER)
             .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue).gradientNormalizationThreshold(1.0)
@@ -97,8 +97,6 @@ public class Word2VecSentimentRNN {
             .prefetchBuffer(16 * Nd4j.getAffinityManager().getNumberOfDevices())
             .reportScoreAfterAveraging(true)
             .averagingFrequency(10)
-            .useLegacyAveraging(false)
-            .useMQ(true)
             .workers(Nd4j.getAffinityManager().getNumberOfDevices())
             .build();
 
@@ -111,18 +109,7 @@ public class Word2VecSentimentRNN {
         log.info("Starting evaluation...");
 
         //Run evaluation. This is on 25k reviews, so can take some time
-        Evaluation evaluation = new Evaluation();
-        while (test.hasNext()) {
-            DataSet t = test.next();
-            INDArray features = t.getFeatureMatrix();
-            INDArray lables = t.getLabels();
-            INDArray inMask = t.getFeaturesMaskArray();
-            INDArray outMask = t.getLabelsMaskArray();
-            INDArray predicted = net.output(features, false, inMask, outMask);
-
-            evaluation.evalTimeSeries(lables, predicted, outMask);
-        }
-
+        Evaluation evaluation = net.evaluate(test);
         System.out.println(evaluation.stats());
     }
 

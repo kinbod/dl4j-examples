@@ -1,9 +1,5 @@
 package org.deeplearning4j.examples.recurrent.encdec;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.MultiDataSet;
@@ -13,6 +9,10 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 @SuppressWarnings("serial")
 public class CorpusIterator implements MultiDataSetIterator {
 
@@ -20,7 +20,7 @@ public class CorpusIterator implements MultiDataSetIterator {
      * Motivation: I want to get asynchronous data iteration while not blocking on net.fit() until the end of epoch. I want to checkpoint
      * the network, show intermediate test results and some stats, it would be harder to achieve with listeners I think so this is how I
      * solved the problem. This way the learn process is asynchronous inside one macrobatch and synchronous across all the macrobatches.
-     * 
+     *
      * Macrobatch is a group of minibatches. The iterator is modified so that it reports the end of data when it exhausts a macrobatch. Then
      * it advances (manually) to the next macrobatch.
      */
@@ -34,6 +34,7 @@ public class CorpusIterator implements MultiDataSetIterator {
     private int currentMacroBatch = 0;
     private int dictSize;
     private int rowSize;
+    private MultiDataSetPreProcessor preProcessor;
 
     public CorpusIterator(List<List<Double>> corpus, int batchSize, int batchesPerMacrobatch, int dictSize, int rowSize) {
         this.corpus = corpus;
@@ -106,8 +107,8 @@ public class CorpusIterator implements MultiDataSetIterator {
     }
 
     @Override
-    public void setPreProcessor(MultiDataSetPreProcessor preProcessor) {
-
+    public MultiDataSetPreProcessor getPreProcessor() {
+        return null;
     }
 
     @Override
@@ -149,4 +150,7 @@ public class CorpusIterator implements MultiDataSetIterator {
         ++currentMacroBatch;
     }
 
+    public void setPreProcessor(MultiDataSetPreProcessor preProcessor) {
+        this.preProcessor = preProcessor;
+    }
 }

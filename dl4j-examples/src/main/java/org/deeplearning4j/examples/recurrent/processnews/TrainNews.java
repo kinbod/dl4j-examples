@@ -53,6 +53,7 @@ import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreproc
 import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
 import org.deeplearning4j.util.ModelSerializer;
+import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
@@ -77,7 +78,7 @@ public class TrainNews {
 
         //DataSetIterators for training and testing respectively
         //Using AsyncDataSetIterator to do data loading in a separate thread; this may improve performance vs. waiting for data to load
-        wordVectors = WordVectorSerializer.loadTxtVectors(new File(WORD_VECTORS_PATH));
+        wordVectors = WordVectorSerializer.readWord2VecModel(new File(WORD_VECTORS_PATH));
 
         TokenizerFactory tokenizerFactory = new DefaultTokenizerFactory();
         tokenizerFactory.setTokenPreProcessor(new CommonPreprocessor());
@@ -118,8 +119,8 @@ public class TrainNews {
             .learningRate(0.0018)
             .list()
             .layer(0, new GravesLSTM.Builder().nIn(inputNeurons).nOut(200)
-                .activation("softsign").build())
-            .layer(1, new RnnOutputLayer.Builder().activation("softmax")
+                .activation(Activation.SOFTSIGN).build())
+            .layer(1, new RnnOutputLayer.Builder().activation(Activation.SOFTMAX)
                 .lossFunction(LossFunctions.LossFunction.MCXENT).nIn(200).nOut(outputs).build())
             .pretrain(false).backprop(true).build();
 
@@ -134,20 +135,7 @@ public class TrainNews {
             System.out.println("Epoch " + i + " complete. Starting evaluation:");
 
             //Run evaluation. This is on 25k reviews, so can take some time
-            Evaluation evaluation = new Evaluation();
-            while (iTest.hasNext()) {
-                DataSet t = iTest.next();
-                INDArray features = t.getFeatureMatrix();
-                INDArray lables = t.getLabels();
-                //System.out.println("labels : " + lables);
-                INDArray inMask = t.getFeaturesMaskArray();
-                INDArray outMask = t.getLabelsMaskArray();
-                INDArray predicted = net.output(features, false);
-
-                //System.out.println("predicted : " + predicted);
-                evaluation.evalTimeSeries(lables, predicted, outMask);
-            }
-            iTest.reset();
+            Evaluation evaluation = net.evaluate(iTest);
 
             System.out.println(evaluation.stats());
         }

@@ -1,13 +1,9 @@
 package org.deeplearning4j.examples.multigpu.vgg16.vgg16;
 
-import lombok.extern.slf4j.Slf4j;
-
-import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.examples.multigpu.vgg16.dataHelpers.FeaturizedPreSave;
 import org.deeplearning4j.examples.multigpu.vgg16.dataHelpers.FlowerDataSetIteratorFeaturized;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.Updater;
-import org.deeplearning4j.nn.conf.distribution.NormalDistribution;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.modelimport.keras.InvalidKerasConfigurationException;
@@ -21,10 +17,10 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.parallelism.ParallelWrapper;
 import org.nd4j.jita.conf.CudaEnvironment;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.environment.Nd4jEnvironment;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 
@@ -41,13 +37,13 @@ import java.io.IOException;
  * Since the helper avoids the forward pass through the frozen layers we save on computation time when running multiple epochs.
  * In this manner, users can iterate quickly tweaking learning rates, weight initialization etc` to settle on a model that gives good results.
  */
-@Slf4j
 public class FitFromFeaturized {
 
     public static final String featureExtractionLayer = FeaturizedPreSave.featurizeExtractionLayer;
     protected static final long seed = 12345;
     protected static final int numClasses = 5;
     protected static final int nEpochs = 3;
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(FitFromFeaturized.class);
 
     public static void main(String [] args) throws IOException, InvalidKerasConfigurationException, UnsupportedKerasConfigurationException {
 
@@ -109,17 +105,14 @@ public class FitFromFeaturized {
             // DataSets prefetching options. Set this value with respect to number of actual devices
             .prefetchBuffer(24)
 
-            // set number of workers equal or higher then number of available devices. x1-x2 are good values to start with
-            .workers(Integer.parseInt(Nd4j.getExecutioner().getEnvironmentInformation().get("cuda.availableDevices").toString()))
+            // set number of workers equal to number of available devices
+            .workers(Nd4j.getAffinityManager().getNumberOfDevices())
 
             // rare averaging improves performance, but might reduce model accuracy
             .averagingFrequency(3)
 
             // if set to TRUE, on every averaging model score will be reported
             .reportScoreAfterAveraging(true)
-
-            // optinal parameter, set to false ONLY if your system has support P2P memory access across PCIe (hint: AWS do not support P2P)
-            .useLegacyAveraging(true)
 
             .build();
 

@@ -7,6 +7,7 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.distribution.NormalDistribution;
+import org.deeplearning4j.nn.conf.layers.BaseLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -18,6 +19,8 @@ import org.nd4j.linalg.api.buffer.util.DataTypeUtil;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.learning.config.IUpdater;
+import org.nd4j.linalg.learning.config.RmsProp;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.io.File;
@@ -60,7 +63,7 @@ public class CustomLayerExample {
 
         MultiLayerConfiguration config = new NeuralNetConfiguration.Builder()
             .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-            .updater(Updater.RMSPROP).rmsDecay(0.95)
+            .updater( new RmsProp(0.95))
             .weightInit(WeightInit.XAVIER)
             .regularization(true).l2(0.03)
             .list()
@@ -76,9 +79,9 @@ public class CustomLayerExample {
 
 
         //First:  run some basic sanity checks on the configuration:
-        double customLayerL2 = config.getConf(1).getLayer().getL2();
+        double customLayerL2 = ((BaseLayer)config.getConf(1).getLayer()).getL2();
         System.out.println("l2 coefficient for custom layer: " + customLayerL2);                //As expected: custom layer inherits the global L2 parameter configuration
-        Updater customLayerUpdater = config.getConf(1).getLayer().getUpdater();
+        IUpdater customLayerUpdater = ((BaseLayer)config.getConf(1).getLayer()).getIUpdater();
         System.out.println("Updater for custom layer: " + customLayerUpdater);                  //As expected: custom layer inherits the global Updater configuration
 
         //Second: We need to ensure that that the JSON and YAML configuration works, with the custom layer
